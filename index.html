@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,6 +27,10 @@
     .timer {
       font-size: 40px;
       margin: 20px 0;
+      transition: color 0.3s ease;
+    }
+    .timer.finished {
+      color: red;
     }
     .buttons {
       display: flex;
@@ -41,6 +45,10 @@
       color: white;
       font-size: 16px;
       cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    button:active {
+      transform: scale(0.95);
     }
     button.pause {
       background-color: #fbc02d;
@@ -48,25 +56,43 @@
     button.stop {
       background-color: #f44336;
     }
-    canvas {
-      max-width: 90%;
+    button.clear {
+      background-color: #d32f2f;
+    }
+    .history {
+      text-align: left;
       margin: 20px auto;
+      max-width: 400px;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    .history ul {
+      list-style: none;
+      padding: 0;
+    }
+    .history li {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    .history li:last-child {
+      border-bottom: none;
     }
   </style>
 </head>
 <body>
   <header>
     <h1>Time Bandit</h1>
-    <div class="profile-icon"></div>
   </header>
-  
-  <main class="main">
-    <input type="text" id="session-name" placeholder="Название сессии" style="margin: 20px 10px; text-align: center;">
 
-    <!-- Поле для ограничения времени -->
+  <main class="main">
+    <input type="text" id="session-name" placeholder="Название сессии">
     <div>
       <label for="max-time">Максимальное время (мин):</label>
-      <input type="number" id="max-time" placeholder="Например, 25" style="text-align: center;">
+      <input type="number" id="max-time" placeholder="Например, 25">
     </div>
     
     <div class="timer">00:00</div>
@@ -78,12 +104,19 @@
 
     <h2>История сессий</h2>
     <canvas id="sessionChart"></canvas>
+
+    <!-- Блок истории -->
+    <div class="history">
+      <h3>Завершённые сессии</h3>
+      <ul id="session-list"></ul>
+      <button class="clear" onclick="clearHistory()">Очистить историю</button>
+    </div>
   </main>
 
   <script>
     let timerInterval;
     let time = 0;
-    let maxTime = null; // Максимальное время в секундах
+    let maxTime = null;
 
     function loadSavedData() {
       const savedTime = localStorage.getItem('time');
@@ -95,6 +128,7 @@
 
       updateTimer();
       updateChart(savedHistory);
+      updateSessionList(savedHistory);
     }
 
     function saveData() {
@@ -110,7 +144,6 @@
     }
 
     function startTimer() {
-      // Устанавливаем максимальное время
       const maxTimeInput = document.getElementById('max-time').value;
       maxTime = maxTimeInput ? parseInt(maxTimeInput, 10) * 60 : null;
 
@@ -121,9 +154,8 @@
         updateTimer();
         saveData();
 
-        // Проверка на достижение максимального времени
         if (maxTime && time >= maxTime) {
-          alert("Время сессии истекло!");
+          document.querySelector('.timer').classList.add('finished');
           stopTimer();
         }
       }, 1000);
@@ -139,29 +171,27 @@
       clearInterval(timerInterval);
       timerInterval = null;
 
-      // Сохранение завершённой сессии
       const sessionName = document.getElementById('session-name').value || "Без названия";
       saveSession(sessionName, time);
 
       time = 0;
       updateTimer();
       saveData();
+      document.querySelector('.timer').classList.remove('finished');
     }
 
     function saveSession(name, duration) {
       const history = JSON.parse(localStorage.getItem('sessionHistory')) || [];
-      
       history.push({ name, duration });
-      if (history.length > 10) history.shift(); // Ограничиваем историю 10 сессиями
-      
+      if (history.length > 10) history.shift();
       localStorage.setItem('sessionHistory', JSON.stringify(history));
       updateChart(history);
+      updateSessionList(history);
     }
 
     function updateChart(history) {
       const ctx = document.getElementById('sessionChart').getContext('2d');
-
-      const labels = history.map((session, index) => session.name);
+      const labels = history.map(session => session.name);
       const data = history.map(session => Math.round(session.duration / 60));
 
       if (window.myChart) {
@@ -182,16 +212,75 @@
         },
         options: {
           scales: {
-            y: {
-              beginAtZero: true
-            }
+            y: { beginAtZero: true }
           }
         }
       });
+    }
+
+    function updateSessionList(history) {
+      const list = document.getElementById('session-list');
+      list.innerHTML = '';
+      history.forEach(session => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${session.name}</span> <span>${Math.round(session.duration / 60)} мин</span>`;
+        list.appendChild(li);
+      });
+    }
+
+    function clearHistory() {
+      localStorage.removeItem('sessionHistory');
+      updateChart([]);
+      updateSessionList([]);
     }
 
     window.onload = loadSavedData;
     document.getElementById('session-name').addEventListener('input', saveData);
   </script>
 </body>
+<body>
+  <header>
+    <h1>Time Bandit</h1>
+    <div id="telegram-login"></div> <!-- Telegram кнопка -->
+    <div id="user-info" style="display: none;">
+      <img id="user-photo" src="" alt="User Photo" width="50">
+      <span id="user-name"></span>
+      <button onclick="logout()">Выйти</button>
+    </div>
+  </header>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    function initTelegramLogin() {
+      if (window.Telegram) {
+        Telegram.WebApp.expand(); // Разворачиваем Mini App
+        const user = Telegram.WebApp.initDataUnsafe?.user;
+
+        if (user) {
+          document.getElementById("user-info").style.display = "block";
+          document.getElementById("user-name").innerText = user.first_name;
+          document.getElementById("user-photo").src = user.photo_url;
+          localStorage.setItem("tg_user", JSON.stringify(user));
+        } else {
+          document.getElementById("telegram-login").innerHTML = `
+            <button onclick="login()">Войти через Telegram</button>
+          `;
+        }
+      }
+    }
+
+    function login() {
+      window.Telegram.WebApp.requestWriteAccess(); // Запросить доступ
+      initTelegramLogin();
+    }
+
+    function logout() {
+      localStorage.removeItem("tg_user");
+      location.reload();
+    }
+
+    window.onload = initTelegramLogin;
+  </script>
+</body>
+
 </html>
