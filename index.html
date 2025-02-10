@@ -309,5 +309,63 @@
     sendTelegramNotification(); // Отправляем уведомление
   }
 </script>
+<body>
+  <header>
+    <h1>Time Bandit</h1>
+    <div id="profile">
+      <img id="user-photo" src="" alt="User Photo" width="50">
+      <span id="user-name"></span>
+      <p>Уровень: <span id="user-level">1</span></p>
+      <p>Очки: <span id="user-points">0</span></p>
+      <div class="progress-bar">
+        <div id="progress-fill"></div>
+      </div>
+    </div>
+  </header>
+
+  <style>
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background-color: #ddd;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    #progress-fill {
+      width: 0%;
+      height: 100%;
+      background-color: #4caf50;
+      transition: width 0.5s ease;
+    }
+  </style>
+  
+  <script>
+    function updateProfile() {
+      const user = JSON.parse(localStorage.getItem("tg_user"));
+      const totalTime = JSON.parse(localStorage.getItem("total_time")) || 0;
+      
+      let level = Math.floor(totalTime / 3600) + 1;
+      let points = Math.floor(totalTime / 60);
+
+      document.getElementById("user-name").innerText = user?.first_name || "Гость";
+      document.getElementById("user-photo").src = user?.photo_url || "default.png";
+      document.getElementById("user-level").innerText = level;
+      document.getElementById("user-points").innerText = points;
+
+      let progress = (totalTime % 3600) / 3600 * 100;
+      document.getElementById("progress-fill").style.width = `${progress}%`;
+    }
+
+    function saveSession(name, duration) {
+      let totalTime = JSON.parse(localStorage.getItem("total_time")) || 0;
+      totalTime += duration;
+      localStorage.setItem("total_time", JSON.stringify(totalTime));
+
+      updateProfile();
+    }
+
+    window.onload = updateProfile;
+  </script>
+</body>
 
 </html>
