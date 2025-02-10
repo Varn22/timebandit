@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time Bandit</title>
+  <style>
+    /* Стиль остается тем же, что и раньше */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f3f4f6;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background-color: white;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    header h1 {
+      font-size: 20px;
+    }
+    .profile-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #ccc;
+    }
+    .main {
+      text-align: center;
+      padding: 20px;
+    }
+    .timer {
+      font-size: 40px;
+      margin: 20px 0;
+    }
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      background-color: #4caf50;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button.pause {
+      background-color: #fbc02d;
+    }
+    button.stop {
+      background-color: #f44336;
+    }
+    nav {
+      display: flex;
+      justify-content: space-around;
+      padding: 10px;
+      background-color: white;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+    }
+    nav button {
+      background: none;
+      border: none;
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Time Bandit</h1>
+    <div class="profile-icon"></div>
+  </header>
+  <main class="main">
+    <div class="bandit-photo">https://i.postimg.cc/dQ7dMzzT/DALL-E-2025-02-10-21-22-55-A-cartoon-style-character-of-a-Time-Bandit-inspired-by-classic-American.webp</div>
+    <input type="text" id="session-name" placeholder="Название сессии" style="margin: 20px 0; font-size: 18px; text-align: center;">
+    <div class="timer">00:00</div>
+    <div class="buttons">
+      <button onclick="startTimer()">Старт</button>
+      <button class="pause" onclick="pauseTimer()">Пауза</button>
+      <button class="stop" onclick="stopTimer()">Стоп</button>
+    </div>
+  </main>
+  <nav>
+    <button>Дом</button>
+    <button>Часы</button>
+    <button>Профиль</button>
+  </nav>
+
+  <script>
+    let timerInterval;
+    let time = 0;
+
+    // Загружаем сохраненные данные
+    function loadSavedData() {
+      const savedTime = localStorage.getItem('time');
+      const savedSessionName = localStorage.getItem('sessionName');
+
+      if (savedTime) time = parseInt(savedTime, 10);
+      if (savedSessionName) document.getElementById('session-name').value = savedSessionName;
+
+      updateTimer();
+    }
+
+    // Сохраняем данные
+    function saveData() {
+      localStorage.setItem('time', time);
+      const sessionName = document.getElementById('session-name').value;
+      localStorage.setItem('sessionName', sessionName);
+    }
+
+    function updateTimer() {
+      const minutes = Math.floor(time / 60).toString().padStart(2, '0');
+      const seconds = (time % 60).toString().padStart(2, '0');
+      document.querySelector('.timer').textContent = `${minutes}:${seconds}`;
+    }
+
+    function startTimer() {
+      if (timerInterval) return;
+      timerInterval = setInterval(() => {
+        time++;
+        updateTimer();
+        saveData();
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      saveData();
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      time = 0;
+      updateTimer();
+      saveData();
+    }
+
+    // Загружаем данные при загрузке страницы
+    window.onload = loadSavedData;
+
+    // Сохраняем название сессии при изменении
+    document.getElementById('session-name').addEventListener('input', saveData);
+  </script>
+</body>
+</html>
