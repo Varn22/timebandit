@@ -61,7 +61,14 @@
   </header>
   
   <main class="main">
-    <input type="text" id="session-name" placeholder="Название сессии">
+    <input type="text" id="session-name" placeholder="Название сессии" style="margin: 20px 10px; text-align: center;">
+
+    <!-- Поле для ограничения времени -->
+    <div>
+      <label for="max-time">Максимальное время (мин):</label>
+      <input type="number" id="max-time" placeholder="Например, 25" style="text-align: center;">
+    </div>
+    
     <div class="timer">00:00</div>
     <div class="buttons">
       <button onclick="startTimer()">Старт</button>
@@ -69,7 +76,6 @@
       <button class="stop" onclick="stopTimer()">Стоп</button>
     </div>
 
-    <!-- Блок для графика -->
     <h2>История сессий</h2>
     <canvas id="sessionChart"></canvas>
   </main>
@@ -77,6 +83,7 @@
   <script>
     let timerInterval;
     let time = 0;
+    let maxTime = null; // Максимальное время в секундах
 
     function loadSavedData() {
       const savedTime = localStorage.getItem('time');
@@ -103,11 +110,22 @@
     }
 
     function startTimer() {
+      // Устанавливаем максимальное время
+      const maxTimeInput = document.getElementById('max-time').value;
+      maxTime = maxTimeInput ? parseInt(maxTimeInput, 10) * 60 : null;
+
       if (timerInterval) return;
+
       timerInterval = setInterval(() => {
         time++;
         updateTimer();
         saveData();
+
+        // Проверка на достижение максимального времени
+        if (maxTime && time >= maxTime) {
+          alert("Время сессии истекло!");
+          stopTimer();
+        }
       }, 1000);
     }
 
@@ -177,4 +195,3 @@
   </script>
 </body>
 </html>
-
