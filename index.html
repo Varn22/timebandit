@@ -282,5 +282,32 @@
     window.onload = initTelegramLogin;
   </script>
 </body>
+<script>
+  function sendTelegramNotification() {
+    const tgUser = JSON.parse(localStorage.getItem("tg_user"));
+    if (!tgUser) return;
+
+    fetch("http://localhost:5000/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: tgUser.id })
+    });
+  }
+
+  function stopTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+
+    const sessionName = document.getElementById('session-name').value || "Без названия";
+    saveSession(sessionName, time);
+
+    time = 0;
+    updateTimer();
+    saveData();
+    document.querySelector('.timer').classList.remove('finished');
+
+    sendTelegramNotification(); // Отправляем уведомление
+  }
+</script>
 
 </html>
